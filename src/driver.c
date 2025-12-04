@@ -1,9 +1,13 @@
-// src/driver.c
-// Simple C driver that calls the assembler function asm_main
-int __attribute__((cdecl)) asm_main(void);
+// /src/driver.c
+// Shared C driver that calls asm_main() from each assembly program.
+#ifdef _MSC_VER
+#define CDECL __cdecl
+#else
+#define CDECL __attribute__((cdecl))
+#endif
+
+int CDECL asm_main(void);
 
 int main(void) {
-int ret_status;
-ret_status = asm_main();
-return ret_status;
+    return asm_main();
 }
