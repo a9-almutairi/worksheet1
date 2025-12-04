@@ -2,7 +2,7 @@
 ; Task 1: add two integers in global memory and print using asm_io
 ; Requires: asm_io.inc / asm_io.asm
 
-%include "asm_io.inc"
+%include "src/asm_io.inc"
 
 SECTION .data
 msg_a      db "A = ", 0

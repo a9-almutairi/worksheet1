@@ -1,6 +1,6 @@
 ; /src/t2_sum_range.asm
 ; Task 2.3: Read start/end; validate 1 <= start <= end <= 100; sum arr[start..end].
-%include "asm_io.inc"
+%include "src/asm_io.inc"
 
 SECTION .data
 prompt_s  db "Enter start index (1..100): ", 0

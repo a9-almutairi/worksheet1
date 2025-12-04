@@ -1,6 +1,6 @@
 ; /src/task1_2.asm
 ; Task 1 (slide-22-style follow-up): small array sum and print
-%include "asm_io.inc"
+%include "src/asm_io.inc"
 
 SECTION .data
 arr     dd 3, 1, 4, 1, 5, 9

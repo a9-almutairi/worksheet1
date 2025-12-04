@@ -1,6 +1,6 @@
 ; /src/t2_sum100.asm
 ; Task 2.2: Define array [1..100], sum, print result.
-%include "asm_io.inc"
+%include "src/asm_io.inc"
 
 SECTION .data
 msg_sum  db "Sum(1..100) = ", 0

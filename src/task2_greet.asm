@@ -1,7 +1,7 @@
 
 ; /src/t2_greet.asm
 ; Task 2.1: Ask for name and count. Validate 50 < n < 100. Print "Welcome, <name>!" n times or error.
-%include "asm_io.inc"
+%include "src/asm_io.inc"
 
 %define NAME_MAX 64
 
