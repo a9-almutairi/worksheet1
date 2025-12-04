@@ -1,52 +1,41 @@
-; /src/task1.asm
-; Task 1: add two integers in global memory and print using asm_io
-; Requires: asm_io.inc / asm_io.asm
+; file: src/task1.asm
+; Task 1.1 — adds two globals in memory, prints result using print_int
 
-%include "src/asm_io.inc"
 
-SECTION .data
-msg_a      db "A = ", 0
-msg_b      db "B = ", 0
-msg_sum    db "A + B = ", 0
-a          dd 17
-b          dd 25
+%include "asm_io.inc"
 
-SECTION .text
+
+section .data
+a dd 7
+b dd 35
+msg_nl db 10,0 ; for clarity when reading output
+
+
+section .bss
+result resd 1
+
+
+section .text
 global asm_main
+extern print_int, print_nl
+
+
 asm_main:
-    enter 0,0
+push ebp
+mov ebp, esp
+; compute result = a + b
+mov eax, [a]
+add eax, [b]
+mov [result], eax
 
-    ; print A
-    push dword msg_a
-    call print_string
-    add esp, 4
-    mov eax, [a]
-    push eax
-    call print_int
-    add esp, 4
-    call print_nl
 
-    ; print B
-    push dword msg_b
-    call print_string
-    add esp, 4
-    mov eax, [b]
-    push eax
-    call print_int
-    add esp, 4
-    call print_nl
+; print result
+; print_int reads value from EAX
+call print_int
+call print_nl
 
-    ; sum and print
-    mov eax, [a]
-    add eax, [b]
-    push dword msg_sum
-    call print_string
-    add esp, 4
-    push eax
-    call print_int
-    add esp, 4
-    call print_nl
 
-    xor eax, eax       ; return 0
-    leave
-    ret
+xor eax, eax ; return 0
+mov esp, ebp
+pop ebp
+ret

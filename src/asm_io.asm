@@ -1,5 +1,5 @@
 ;
-; file: src/asm_io.asm
+; file: asm_io.asm
 ; Assembly I/O routines
 ; To assemble for DJGPP
 ;   nasm -f coff -d COFF_TYPE asm_io.asm

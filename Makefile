@@ -1,80 +1,63 @@
-# /Makefile — fixed include path + filenames that match your tree
+# Makefile — builds every NASM program in src/*.asm (except asm_io.asm)
+# Matches your per-file commands (nasm ... -I src ; gcc -m32 ... -o bin/<name>)
 
-NASM    := nasm
-GCC     := gcc
-ASFLAGS := -f elf -I src/           # include src/ so %include "asm_io.inc" works
-CFLAGS  := -m32 -Wall -Wextra -O2 -std=c11
-LDFLAGS := -m32
+CC       := gcc
+AS       := nasm
+SRC_DIR  := src
+BIN_DIR  := bin
 
-SRC_DIR   := src
-BUILD_DIR := build
+# 32-bit + non-PIE to avoid DT_TEXTREL/PIE warnings on modern distros
+CFLAGS   := -m32 -O2 -Wall -Wextra -Werror=implicit-function-declaration -fno-pie
+ASFLAGS  := -f elf -I $(SRC_DIR)
+LDFLAGS  := -m32 -no-pie
 
-# Programs in your current tree
-PROGS := \
-  task1 \
-  tas1_2 \
-  task2_greet \
-  task2_sum100 \
-  task2_sum_range
+IO_ASM   := $(SRC_DIR)/asm_io.asm
+IO_INC   := $(SRC_DIR)/asm_io.inc
+DRIVER_C := $(SRC_DIR)/driver.c
 
-TARGETS := $(addprefix $(BUILD_DIR)/,$(PROGS))
+# Auto-detect all .asm programs except asm_io.asm
+ASM_SRCS := $(filter-out $(IO_ASM), $(wildcard $(SRC_DIR)/*.asm))
+PROGS    := $(patsubst $(SRC_DIR)/%.asm,$(BIN_DIR)/%,$(ASM_SRCS))
 
-DRIVER      := $(SRC_DIR)/driver.c
-ASM_IO_SRC  := $(SRC_DIR)/asm_io.asm
-ASM_IO_OBJ  := $(BUILD_DIR)/asm_io.o
-DRIVER_OBJ  := $(BUILD_DIR)/driver.o
+# Default: build everything found in src/*.asm (excluding asm_io.asm)
+.PHONY: all
+all: $(BIN_DIR) $(PROGS)
+	@echo "Built: $(notdir $(PROGS))"
 
-ASM_SRCS := \
-  $(SRC_DIR)/task1.asm \
-  $(SRC_DIR)/tas1_2.asm \
-  $(SRC_DIR)/task2_greet.asm \
-  $(SRC_DIR)/task2_sum100.asm \
-  $(SRC_DIR)/task2_sum_range.asm
+$(BIN_DIR):
+	@mkdir -p $@
 
-ASM_OBJS := $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.o,$(ASM_SRCS))
+# Link rule: each program links its own object with driver.o and asm_io.o
+$(BIN_DIR)/%: $(SRC_DIR)/%.o $(SRC_DIR)/driver.o $(SRC_DIR)/asm_io.o | $(BIN_DIR)
+	$(CC) $(LDFLAGS) -o $@ $^
+	@echo "LD $@"
 
-.PHONY: all clean list run-%
+# Compile C driver once
+$(SRC_DIR)/driver.o: $(DRIVER_C)
+	$(CC) $(CFLAGS) -c $< -o $@
+	@echo "CC $@"
 
-all: $(TARGETS)
+# Assemble support once
+$(SRC_DIR)/asm_io.o: $(IO_ASM)
+	$(AS) $(ASFLAGS) $< -o $@
+	@echo "AS $@"
 
-list:
-	@echo "Programs:" $(PROGS)
+# Assemble each program; -I src lets %include "asm_io.inc" resolve
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.asm $(IO_INC)
+	$(AS) $(ASFLAGS) $< -o $@
+	@echo "AS $@"
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+# Convenience: explicit targets if you prefer fixed names
+.PHONY: task1 task1_2 t2_welcome task2a task2b task2c
+task1:       $(BIN_DIR)/task1
+task1_2:     $(BIN_DIR)/task1_2
+t2_welcome:  $(BIN_DIR)/t2_welcome
+task2a:      $(BIN_DIR)/task2a
+task2b:      $(BIN_DIR)/task2b
+task2c:      $(BIN_DIR)/task2c
 
-# Compile C driver
-$(DRIVER_OBJ): $(DRIVER) | $(BUILD_DIR)
-	$(GCC) $(CFLAGS) -c $< -o $@
-
-# Assemble asm_io separately (shared by all)
-$(ASM_IO_OBJ): $(ASM_IO_SRC) | $(BUILD_DIR)
-	$(NASM) $(ASFLAGS) $< -o $@
-
-# Generic rule for other .asm sources
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm | $(BUILD_DIR)
-	$(NASM) $(ASFLAGS) $< -o $@
-
-# Link each program
-$(BUILD_DIR)/task1: $(BUILD_DIR)/task1.o $(DRIVER_OBJ) $(ASM_IO_OBJ)
-	$(GCC) $(LDFLAGS) $^ -o $@
-
-$(BUILD_DIR)/tas1_2: $(BUILD_DIR)/tas1_2.o $(DRIVER_OBJ) $(ASM_IO_OBJ)
-	$(GCC) $(LDFLAGS) $^ -o $@
-
-$(BUILD_DIR)/task2_greet: $(BUILD_DIR)/task2_greet.o $(DRIVER_OBJ) $(ASM_IO_OBJ)
-	$(GCC) $(LDFLAGS) $^ -o $@
-
-$(BUILD_DIR)/task2_sum100: $(BUILD_DIR)/task2_sum100.o $(DRIVER_OBJ) $(ASM_IO_OBJ)
-	$(GCC) $(LDFLAGS) $^ -o $@
-
-$(BUILD_DIR)/task2_sum_range: $(BUILD_DIR)/task2_sum_range.o $(DRIVER_OBJ) $(ASM_IO_OBJ)
-	$(GCC) $(LDFLAGS) $^ -o $@
-
-# Helpers
-run-%: $(BUILD_DIR)/%
-	@echo "Running $<"
-	@$<
-
+# Clean
+.PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BIN_DIR) $(SRC_DIR)/*.o
+	@echo "Cleaned"
